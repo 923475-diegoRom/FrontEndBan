@@ -37,7 +37,7 @@ const Layout = ({ children, sidebarOpen, setSidebarOpen }) => {
             <h3 style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '12px', textTransform: 'uppercase' }}>Ajustes del Modelo</h3>
             
             <label className="toggle-label" style={{ marginBottom: '12px' }}>
-              <input type="checkbox" defaultChecked />
+              <input type="checkbox" checked={useRag} onChange={(e) => setUseRag(e.target.checked)} />
               <Database size={16} /> Búsqueda RAG (Bases Vectoriales)
             </label>
             
@@ -202,6 +202,7 @@ function App() {
     { role: 'system', content: 'Hola. Soy tu Copiloto Financiero Multi-Agente. ¿En qué te puedo ayudar hoy?' }
   ]);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [useRag, setUseRag] = useState(true);
   const chatEndRef = useRef(null);
 
   const scrollToBottom = () => {
@@ -212,67 +213,98 @@ function App() {
     scrollToBottom();
   }, [messages]);
 
-  const simulateChatFlow = (userText) => {
-    // 1. Add User Message
+  const sendMessage = async (userText) => {
     const newMsg = { role: 'user', content: userText };
     setMessages(prev => [...prev, newMsg]);
     setInput('');
     setIsProcessing(true);
 
-    // 2. Simulated SSE / TTFT phase
-    setTimeout(() => {
-      setMessages(prev => [
-        ...prev, 
-        { 
-          role: 'system', 
-          content: '', 
-          streaming: true,
-          thought: {
-            summary: 'Ejecutando simular_credito(monto=2000000, plazo=15)...',
-            details: 'Invocando MCP Tool: credit_simulator\nParams: {"monto": 2000000, "plazo": 180, "tasa_base": 9.5}\nResponse: {"pago_mensual": 20911, "aprobado": true}'
+    setMessages(prev => [
+      ...prev, 
+      { 
+        role: 'system', 
+        content: '', 
+        streaming: true,
+        citations: []
+      }
+    ]);
+
+    try {
+      const response = await fetch('http://localhost:8000/api/v1/chat/stream', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ message: userText, use_rag: useRag })
+      });
+
+      if (!response.ok) {
+        throw new Error(`Error HTTP: ${response.status}`);
+      }
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder('utf-8');
+      
+      let done = false;
+      let textContent = '';
+
+      while (!done) {
+        const { value, done: readerDone } = await reader.read();
+        done = readerDone;
+        if (value) {
+          const chunkStr = decoder.decode(value, { stream: true });
+          const lines = chunkStr.split('\n');
+          for (const line of lines) {
+            if (line.startsWith('data: ')) {
+              const dataStr = line.slice(6);
+              if (dataStr.trim() === '[DONE]') continue;
+              try {
+                const data = JSON.parse(dataStr);
+                if (data.type === 'token') {
+                  textContent += data.content;
+                  setMessages(prev => {
+                    const updated = [...prev];
+                    updated[updated.length - 1].content = textContent;
+                    return updated;
+                  });
+                } else if (data.type === 'sources') {
+                  setMessages(prev => {
+                    const updated = [...prev];
+                    const sources = Array.isArray(data.content) ? data.content : [];
+                    updated[updated.length - 1].citations = sources.map((s, i) => s.metadata && s.metadata.source ? s.metadata.source : `Fuente ${i+1}`);
+                    return updated;
+                  });
+                }
+              } catch (e) {
+                // Ignore parse errors on incomplete chunks
+              }
+            }
           }
         }
-      ]);
+      }
+      
+      setMessages(prev => {
+        const updated = [...prev];
+        updated[updated.length - 1].streaming = false;
+        return updated;
+      });
 
-      // 3. Simulated Streaming phase
-      setTimeout(() => {
-        let text = 'He analizado tu solicitud. Basado en las condiciones actuales para un crédito hipotecario, aquí tienes los detalles de la simulación:';
-        
-        setMessages(prev => {
-          const updated = [...prev];
-          updated[updated.length - 1].content = text;
-          updated[updated.length - 1].citations = ['📄 Reglamento_Hipotecario.pdf'];
-          return updated;
-        });
-
-        // 4. Final Card and Footer phase
-        setTimeout(() => {
-          setMessages(prev => {
-            const updated = [...prev];
-            updated[updated.length - 1].streaming = false;
-            updated[updated.length - 1].interactiveData = {
-              monto: '$2,000,000 MXN',
-              pagoMensual: '$20,911',
-              plazo: '15 Años (180 meses)',
-              tasa: '9.5% Fija'
-            };
-            updated[updated.length - 1].metrics = {
-              ttft: '180ms',
-              latency: '1.2s',
-              tokens: '142',
-              model: 'Gemma 2 9B (Groq)'
-            };
-            return updated;
-          });
-          setIsProcessing(false);
-        }, 1500);
-      }, 1000);
-    }, 600);
+    } catch (error) {
+      console.error(error);
+      setMessages(prev => {
+        const updated = [...prev];
+        updated[updated.length - 1].content = 'Error al comunicarse con el servidor.';
+        updated[updated.length - 1].streaming = false;
+        return updated;
+      });
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   const handleSend = () => {
     if (!input.trim() || isProcessing) return;
-    simulateChatFlow(input);
+    sendMessage(input);
   };
 
   return (
@@ -302,7 +334,7 @@ function App() {
           <div className="input-actions">
             <div className="action-toggles">
               <label className="toggle-label">
-                <input type="checkbox" defaultChecked />
+                <input type="checkbox" checked={useRag} onChange={(e) => setUseRag(e.target.checked)} />
                 <Database size={16} /> RAG
               </label>
             </div>
