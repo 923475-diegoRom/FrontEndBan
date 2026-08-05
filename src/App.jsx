@@ -3,8 +3,38 @@ import { Database, Send, Loader2, Mic, Square } from 'lucide-react';
 import { Layout } from './components/Layout';
 import { Message } from './components/Message';
 import './App.css';
+// ------------------------------------------------------------
+// Frontend Streaming Logic Overview
+// ------------------------------------------------------------
+// This React component implements the client side of the chatbot's
+// Server‑Sent Events (SSE) streaming protocol. The backend (`/api/v1/chat/stream`)
+// returns a stream of newline‑delimited JSON events. Each event has a `type`
+// field (`token`, `sources`, `metrics`, `tool_start`, `tool_end`).
+//
+// The component reads the raw `ReadableStream` from `fetch`, decodes the bytes
+// with a `TextDecoder`, and buffers partial chunks until it encounters the
+// double‑newline separator (`"\n\n"`). It then parses each `data:` line as JSON
+// and updates the UI state accordingly:
+//   • `token`   → appends to the current assistant message content.
+//   • `sources` → stores citation metadata for the last assistant message.
+//   • `metrics` → attaches latency/throughput information.
+//   • `tool_start` / `tool_end` → records tool invocation details in the
+//     "thought" field, enabling the UI to display tool usage steps.
+//
+// By using React state updates (`setMessages`) inside the streaming loop, the
+// UI renders each token as soon as it arrives, giving a real‑time typing effect.
+// The final message is marked with `streaming: false` once the stream ends.
+// ------------------------------------------------------------
 
 function App() {
+  // Persist a session identifier for the chat history
+  const [sessionId, setSessionId] = useState(() => {
+    const stored = localStorage.getItem('sessionId');
+    if (stored) return stored;
+    const generated = crypto.randomUUID();
+    localStorage.setItem('sessionId', generated);
+    return generated;
+  });
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [input, setInput] = useState('');
   const [messages, setMessages] = useState([]);
@@ -115,28 +145,28 @@ function App() {
   }, [messages]);
 
   const sendMessage = async (userText) => {
-    const newMsg = { role: 'user', content: userText };
-    setMessages(prev => [...prev, newMsg]);
+    // Add user's message to the chat
+    const userMsg = { role: 'user', content: userText };
+    setMessages(prev => [...prev, userMsg]);
     setInput('');
     setIsProcessing(true);
 
+    // Placeholder for assistant's streaming response
     setMessages(prev => [
       ...prev,
       {
-        role: 'system',
+        role: 'assistant',
         content: '',
         streaming: true,
-        citations: []
+        citations: [],
       }
     ]);
 
     try {
       const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/api/v1/chat/stream`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ message: userText, use_rag: useRag })
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: userText, use_rag: useRag, session_id: sessionId })
       });
 
       if (!response.ok) {
