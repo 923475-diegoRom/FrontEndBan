@@ -57,7 +57,7 @@ export const Layout = ({ children, sidebarOpen, setSidebarOpen, useRag, setUseRa
     formData.append('file', file);
 
     try {
-      const response = await fetch('https://fluffy-zebra-9667j6gxr5j37xjg-8000.app.github.dev/api/v1/documents/upload', {
+      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/api/v1/documents/upload`, {
         method: 'POST',
         body: formData,
       });

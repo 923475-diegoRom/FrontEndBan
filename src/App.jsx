@@ -7,13 +7,13 @@ import './App.css';
 function App() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [input, setInput] = useState('');
-  const [messages, setMessages] = useState([
-    { 
-      role: 'system', 
-      content: 'Hola. Soy tu Copiloto Financiero. ¿En qué te puedo ayudar hoy?',
-      quickActions: ['Consultar saldo', 'Transferir dinero', 'Simular crédito', 'Buscar información']
-    }
-  ]);
+  const [messages, setMessages] = useState([]);
+
+  const welcomeMessage = { 
+    role: 'system', 
+    content: 'Hola. Soy tu Copiloto Financiero. ¿En qué te puedo ayudar hoy?',
+    quickActions: ['Consultar saldo', 'Transferir dinero', 'Simular crédito', 'Buscar información']
+  };
   const [isProcessing, setIsProcessing] = useState(false);
   const [useRag, setUseRag] = useState(true);
   const [serverStatus, setServerStatus] = useState(null);
@@ -26,7 +26,7 @@ function App() {
   useEffect(() => {
     const fetchStatus = async () => {
       try {
-        const res = await fetch('https://fluffy-zebra-9667j6gxr5j37xjg-8000.app.github.dev/api/v1/status');
+        const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/api/v1/status`);
         if (res.ok) {
           const data = await res.json();
           setServerStatus(data);
@@ -65,7 +65,7 @@ function App() {
         
         setIsProcessing(true);
         try {
-          const res = await fetch('https://fluffy-zebra-9667j6gxr5j37xjg-8000.app.github.dev/api/v1/audio/transcribe', {
+          const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/api/v1/audio/transcribe`, {
             method: 'POST',
             body: formData
           });
@@ -119,7 +119,7 @@ function App() {
     ]);
 
     try {
-      const response = await fetch('https://fluffy-zebra-9667j6gxr5j37xjg-8000.app.github.dev/api/v1/chat/stream', {
+      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/api/v1/chat/stream`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -167,7 +167,10 @@ function App() {
                     setMessages(prev => {
                       const updated = [...prev];
                       const sources = Array.isArray(data.content) ? data.content : [];
-                      updated[updated.length - 1].citations = sources.map((s, i) => s.metadata && s.metadata.source ? s.metadata.source : `Fuente ${i + 1}`);
+                      updated[updated.length - 1].citations = sources.map((s, i) => ({
+                        source: s.metadata && s.metadata.source ? s.metadata.source : `Fuente ${i + 1}`,
+                        pageContent: s.pageContent || ''
+                      }));
                       return updated;
                     });
                   } else if (data.type === 'metrics') {
@@ -242,6 +245,9 @@ function App() {
           </div>
         ) : (
           <>
+            <div className="sticky-welcome">
+              <Message msg={welcomeMessage} onQuickActionClick={sendMessage} />
+            </div>
             {messages.map((msg, idx) => (
               <Message key={idx} msg={msg} onQuickActionClick={sendMessage} />
             ))}

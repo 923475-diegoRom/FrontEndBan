@@ -34,8 +34,8 @@ export const Message = ({ msg, onQuickActionClick }) => {
           )}
           
           {msg.citations && msg.citations.length > 0 && (
-            <div style={{ marginTop: '12px' }}>
-              {msg.citations.map((c, i) => <CitationBadge key={i} docName={c} />)}
+            <div style={{ marginTop: '12px', display: 'flex', flexWrap: 'wrap' }}>
+              {msg.citations.map((c, i) => <CitationBadge key={i} citation={c} />)}
             </div>
           )}
           
