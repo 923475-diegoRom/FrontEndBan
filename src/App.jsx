@@ -24,7 +24,7 @@ function App() {
   }, []);
 
   // Short welcome for mobile
-  const shortWelcome = { role: 'system', content: 'Hola', quickActions: welcomeMessage.quickActions };
+  const shortWelcome = { role: 'system', content: 'Hola, ¿en qué puedo ayudarte?', quickActions: welcomeMessage.quickActions };
 
   // duplicate isProcessing removed
   const [useRag, setUseRag] = useState(true);
@@ -282,12 +282,7 @@ function App() {
             disabled={isProcessing || initialLoading}
           />
           <div className="input-actions">
-            <div className="action-toggles">
-              <label className="toggle-label">
-                <input type="checkbox" checked={useRag} onChange={(e) => setUseRag(e.target.checked)} disabled={initialLoading} />
-                <Database size={16} /> RAG
-              </label>
-            </div>
+
             
             <button
               className={`mic-btn ${isRecording ? 'recording' : ''}`}
