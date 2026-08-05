@@ -5,7 +5,7 @@ import { CitationBadge } from './CitationBadge';
 import { InteractiveCard } from './InteractiveCard';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-export const Message = ({ msg }) => {
+export const Message = ({ msg, onQuickActionClick }) => {
   const isUser = msg.role === 'user';
   
   return (
@@ -45,7 +45,11 @@ export const Message = ({ msg }) => {
         {msg.quickActions && msg.quickActions.length > 0 && (
           <div style={{ display: 'flex', gap: '8px', marginTop: '12px', flexWrap: 'wrap' }}>
             {msg.quickActions.map((action, i) => (
-              <button key={i} className="quick-action-chip">
+              <button 
+                key={i} 
+                className="quick-action-chip"
+                onClick={() => onQuickActionClick && onQuickActionClick(action)}
+              >
                 {action}
               </button>
             ))}

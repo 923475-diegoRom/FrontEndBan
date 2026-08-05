@@ -11,7 +11,7 @@ function App() {
     { 
       role: 'system', 
       content: 'Hola. Soy tu Copiloto Financiero. ¿En qué te puedo ayudar hoy?',
-      quickActions: ['Ver saldo', 'Transferir dinero', 'Estado de cuenta']
+      quickActions: ['Consultar saldo', 'Transferir dinero', 'Simular crédito', 'Buscar información']
     }
   ]);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -176,6 +176,27 @@ function App() {
                       updated[updated.length - 1].metrics = data.content;
                       return updated;
                     });
+                  } else if (data.type === 'tool_start') {
+                    setMessages(prev => {
+                      const updated = [...prev];
+                      const msg = updated[updated.length - 1];
+                      if (!msg.thought) {
+                        msg.thought = { summary: `Herramienta: ${data.name}`, details: `Entrada: ${JSON.stringify(data.input, null, 2)}` };
+                      } else {
+                        msg.thought.summary += `, ${data.name}`;
+                        msg.thought.details += `\n\nHerramienta: ${data.name}\nEntrada: ${JSON.stringify(data.input, null, 2)}`;
+                      }
+                      return updated;
+                    });
+                  } else if (data.type === 'tool_end') {
+                    setMessages(prev => {
+                      const updated = [...prev];
+                      const msg = updated[updated.length - 1];
+                      if (msg.thought) {
+                        msg.thought.details += `\nResultado: ${data.output}`;
+                      }
+                      return updated;
+                    });
                   }
                 } catch (e) {
                   console.warn("Error parsing chunk", e, dataStr);
@@ -222,7 +243,7 @@ function App() {
         ) : (
           <>
             {messages.map((msg, idx) => (
-              <Message key={idx} msg={msg} />
+              <Message key={idx} msg={msg} onQuickActionClick={sendMessage} />
             ))}
             <div ref={chatEndRef} />
           </>
