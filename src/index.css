@@ -1,0 +1,85 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+:root {
+  /* Backgrounds */
+  --bg-main: #0F172A; /* Slate 900 */
+  --bg-surface: #1E293B; /* Slate 800 */
+  --bg-surface-light: #334155; /* Slate 700 */
+
+  /* Accents */
+  --accent-indigo: #6366F1;
+  --accent-indigo-hover: #4F46E5;
+  --accent-cyan: #0EA5E9;
+  --accent-emerald: #10B981;
+
+  /* Text */
+  --text-primary: #F8FAFC; /* Slate 50 */
+  --text-secondary: #94A3B8; /* Slate 400 */
+
+  /* Border */
+  --border-color: #334155;
+  
+  --font-main: 'Inter', sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--font-main);
+  background-color: var(--bg-main);
+  color: var(--text-primary);
+  height: 100vh;
+  overflow: hidden; /* App is full height, no global scroll */
+}
+
+#root {
+  height: 100%;
+  width: 100%;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent; 
+}
+ 
+::-webkit-scrollbar-thumb {
+  background: var(--bg-surface-light); 
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-secondary); 
+}
+
+/* Animations */
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+.animate-blink {
+  animation: blink 1s step-end infinite;
+}
+
+@keyframes pulse {
+  0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+  70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
+  100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+}
+
+.status-indicator {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: var(--accent-emerald);
+  display: inline-block;
+  animation: pulse 2s infinite;
+}
