@@ -74,44 +74,53 @@ function App() {
       
       let done = false;
       let textContent = '';
+      let buffer = '';
 
       while (!done) {
         const { value, done: readerDone } = await reader.read();
         done = readerDone;
         if (value) {
-          const chunkStr = decoder.decode(value, { stream: true });
-          const lines = chunkStr.split('\n');
-          for (const line of lines) {
-            if (line.startsWith('data: ')) {
-              const dataStr = line.slice(6);
-              if (dataStr.trim() === '[DONE]') continue;
-              try {
-                const data = JSON.parse(dataStr);
-                if (data.type === 'token') {
-                  textContent += data.content;
-                  setMessages(prev => {
-                    const updated = [...prev];
-                    updated[updated.length - 1].content = textContent;
-                    return updated;
-                  });
-                } else if (data.type === 'sources') {
-                  setMessages(prev => {
-                    const updated = [...prev];
-                    const sources = Array.isArray(data.content) ? data.content : [];
-                    updated[updated.length - 1].citations = sources.map((s, i) => s.metadata && s.metadata.source ? s.metadata.source : `Fuente ${i+1}`);
-                    return updated;
-                  });
-                } else if (data.type === 'metrics') {
-                  setMessages(prev => {
-                    const updated = [...prev];
-                    updated[updated.length - 1].metrics = data.content;
-                    return updated;
-                  });
+          buffer += decoder.decode(value, { stream: true });
+          
+          let eventEnd = buffer.indexOf('\n\n');
+          while (eventEnd !== -1) {
+            const eventStr = buffer.slice(0, eventEnd);
+            buffer = buffer.slice(eventEnd + 2);
+            
+            const lines = eventStr.split('\n');
+            for (const line of lines) {
+              if (line.startsWith('data: ')) {
+                const dataStr = line.slice(6);
+                if (dataStr.trim() === '[DONE]') continue;
+                try {
+                  const data = JSON.parse(dataStr);
+                  if (data.type === 'token') {
+                    textContent += data.content;
+                    setMessages(prev => {
+                      const updated = [...prev];
+                      updated[updated.length - 1].content = textContent;
+                      return updated;
+                    });
+                  } else if (data.type === 'sources') {
+                    setMessages(prev => {
+                      const updated = [...prev];
+                      const sources = Array.isArray(data.content) ? data.content : [];
+                      updated[updated.length - 1].citations = sources.map((s, i) => s.metadata && s.metadata.source ? s.metadata.source : `Fuente ${i+1}`);
+                      return updated;
+                    });
+                  } else if (data.type === 'metrics') {
+                    setMessages(prev => {
+                      const updated = [...prev];
+                      updated[updated.length - 1].metrics = data.content;
+                      return updated;
+                    });
+                  }
+                } catch (e) {
+                  console.warn("Error parsing chunk", e, dataStr);
                 }
-              } catch (e) {
-                // Ignore parse errors on incomplete chunks
               }
             }
+            eventEnd = buffer.indexOf('\n\n');
           }
         }
       }
