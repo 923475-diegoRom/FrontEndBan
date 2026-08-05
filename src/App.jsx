@@ -18,7 +18,7 @@ function App() {
   useEffect(() => {
     const fetchStatus = async () => {
       try {
-        const res = await fetch('http://localhost:8000/api/v1/status');
+        const res = await fetch('https://fluffy-zebra-9667j6gxr5j37xjg-8000.app.github.dev/api/v1/status');
         if (res.ok) {
           const data = await res.json();
           setServerStatus(data);
@@ -47,17 +47,17 @@ function App() {
     setIsProcessing(true);
 
     setMessages(prev => [
-      ...prev, 
-      { 
-        role: 'system', 
-        content: '', 
+      ...prev,
+      {
+        role: 'system',
+        content: '',
         streaming: true,
         citations: []
       }
     ]);
 
     try {
-      const response = await fetch('http://localhost:8000/api/v1/chat/stream', {
+      const response = await fetch('https://fluffy-zebra-9667j6gxr5j37xjg-8000.app.github.dev/api/v1/chat/stream', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -71,7 +71,7 @@ function App() {
 
       const reader = response.body.getReader();
       const decoder = new TextDecoder('utf-8');
-      
+
       let done = false;
       let textContent = '';
       let buffer = '';
@@ -81,12 +81,12 @@ function App() {
         done = readerDone;
         if (value) {
           buffer += decoder.decode(value, { stream: true });
-          
+
           let eventEnd = buffer.indexOf('\n\n');
           while (eventEnd !== -1) {
             const eventStr = buffer.slice(0, eventEnd);
             buffer = buffer.slice(eventEnd + 2);
-            
+
             const lines = eventStr.split('\n');
             for (const line of lines) {
               if (line.startsWith('data: ')) {
@@ -105,7 +105,7 @@ function App() {
                     setMessages(prev => {
                       const updated = [...prev];
                       const sources = Array.isArray(data.content) ? data.content : [];
-                      updated[updated.length - 1].citations = sources.map((s, i) => s.metadata && s.metadata.source ? s.metadata.source : `Fuente ${i+1}`);
+                      updated[updated.length - 1].citations = sources.map((s, i) => s.metadata && s.metadata.source ? s.metadata.source : `Fuente ${i + 1}`);
                       return updated;
                     });
                   } else if (data.type === 'metrics') {
@@ -124,7 +124,7 @@ function App() {
           }
         }
       }
-      
+
       setMessages(prev => {
         const updated = [...prev];
         updated[updated.length - 1].streaming = false;
@@ -180,8 +180,8 @@ function App() {
                 <Database size={16} /> RAG
               </label>
             </div>
-            <button 
-              className="send-btn" 
+            <button
+              className="send-btn"
               onClick={handleSend}
               disabled={!input.trim() || isProcessing}
             >
