@@ -8,6 +8,7 @@ function App() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [input, setInput] = useState('');
   const [messages, setMessages] = useState([]);
+  const [isProcessing, setIsProcessing] = useState(false);
 
   const welcomeMessage = { 
     role: 'system', 
@@ -25,6 +26,7 @@ function App() {
   // Short welcome for mobile
   const shortWelcome = { role: 'system', content: 'Hola', quickActions: welcomeMessage.quickActions };
 
+  // duplicate isProcessing removed
   const [useRag, setUseRag] = useState(true);
   const [serverStatus, setServerStatus] = useState(null);
   const [initialLoading, setInitialLoading] = useState(true);
