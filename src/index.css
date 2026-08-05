@@ -2,24 +2,39 @@
 
 :root {
   /* Backgrounds */
-  --bg-main: #0F172A; /* Slate 900 */
-  --bg-surface: #1E293B; /* Slate 800 */
-  --bg-surface-light: #334155; /* Slate 700 */
+  --bg-main: #F8F9FA; 
+  --bg-surface: #FFFFFF; 
+  --bg-surface-light: #F3F4F6; 
 
   /* Accents */
-  --accent-indigo: #6366F1;
-  --accent-indigo-hover: #4F46E5;
-  --accent-cyan: #0EA5E9;
-  --accent-emerald: #10B981;
+  --accent-brand: #EB0029; /* Banorte Red */
+  --accent-brand-hover: #C80022;
+  --accent-brand-light: rgba(235, 0, 41, 0.1);
+  --accent-success: #10B981;
+  --accent-alert: #EF4444;
 
   /* Text */
-  --text-primary: #F8FAFC; /* Slate 50 */
-  --text-secondary: #94A3B8; /* Slate 400 */
+  --text-primary: #111827; 
+  --text-secondary: #4B5563; 
 
   /* Border */
-  --border-color: #334155;
+  --border-color: #E5E7EB;
   
-  --font-main: 'Inter', sans-serif;
+  --font-main: 'Inter', system-ui, sans-serif;
+}
+
+:root.dark {
+  /* Dark Backgrounds */
+  --bg-main: #111827; 
+  --bg-surface: #1F2937; 
+  --bg-surface-light: #374151; 
+
+  /* Text */
+  --text-primary: #F9FAFB; 
+  --text-secondary: #9CA3AF; 
+
+  /* Border */
+  --border-color: #4B5563;
 }
 
 * {

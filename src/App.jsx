@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Database, Send } from 'lucide-react';
+import { Database, Send, Loader2, Mic, Square } from 'lucide-react';
 import { Layout } from './components/Layout';
 import { Message } from './components/Message';
 import './App.css';
@@ -8,12 +8,20 @@ function App() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [input, setInput] = useState('');
   const [messages, setMessages] = useState([
-    { role: 'system', content: 'Hola. Soy tu Copiloto Financiero Multi-Agente. ¿En qué te puedo ayudar hoy?' }
+    { 
+      role: 'system', 
+      content: 'Hola. Soy tu Copiloto Financiero. ¿En qué te puedo ayudar hoy?',
+      quickActions: ['Ver saldo', 'Transferir dinero', 'Estado de cuenta']
+    }
   ]);
   const [isProcessing, setIsProcessing] = useState(false);
   const [useRag, setUseRag] = useState(true);
   const [serverStatus, setServerStatus] = useState(null);
+  const [initialLoading, setInitialLoading] = useState(true);
+  const [isRecording, setIsRecording] = useState(false);
   const chatEndRef = useRef(null);
+  const mediaRecorderRef = useRef(null);
+  const audioChunksRef = useRef([]);
 
   useEffect(() => {
     const fetchStatus = async () => {
@@ -22,6 +30,7 @@ function App() {
         if (res.ok) {
           const data = await res.json();
           setServerStatus(data);
+          setInitialLoading(false);
         }
       } catch (err) {
         console.error("Error fetching status:", err);
@@ -34,6 +43,59 @@ function App() {
 
   const scrollToBottom = () => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mediaRecorder = new MediaRecorder(stream);
+      mediaRecorderRef.current = mediaRecorder;
+      audioChunksRef.current = [];
+
+      mediaRecorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          audioChunksRef.current.push(event.data);
+        }
+      };
+
+      mediaRecorder.onstop = async () => {
+        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+        const formData = new FormData();
+        formData.append('audio', audioBlob, 'audio.webm');
+        
+        setIsProcessing(true);
+        try {
+          const res = await fetch('https://fluffy-zebra-9667j6gxr5j37xjg-8000.app.github.dev/api/v1/audio/transcribe', {
+            method: 'POST',
+            body: formData
+          });
+          const data = await res.json();
+          if (data.status === 'success' && data.text) {
+            setInput((prev) => prev + (prev ? ' ' : '') + data.text);
+          } else {
+            console.error("Error from whisper:", data);
+          }
+        } catch (err) {
+          console.error("Error sending audio:", err);
+        } finally {
+          setIsProcessing(false);
+        }
+      };
+
+      mediaRecorder.start();
+      setIsRecording(true);
+    } catch (err) {
+      console.error("Error accessing microphone:", err);
+      alert("No se pudo acceder al micrófono.");
+    }
+  };
+
+  const stopRecording = () => {
+    if (mediaRecorderRef.current && isRecording) {
+      mediaRecorderRef.current.stop();
+      setIsRecording(false);
+      mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
+    }
   };
 
   useEffect(() => {
@@ -152,17 +214,26 @@ function App() {
   return (
     <Layout sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} useRag={useRag} setUseRag={setUseRag} serverStatus={serverStatus}>
       <div className="chat-area">
-        {messages.map((msg, idx) => (
-          <Message key={idx} msg={msg} />
-        ))}
-        <div ref={chatEndRef} />
+        {initialLoading ? (
+          <div className="loader-container">
+            <Loader2 className="spinner" size={40} />
+            <p>Conectando con el servidor...</p>
+          </div>
+        ) : (
+          <>
+            {messages.map((msg, idx) => (
+              <Message key={idx} msg={msg} />
+            ))}
+            <div ref={chatEndRef} />
+          </>
+        )}
       </div>
 
       <div className="input-container">
         <div className="input-bar">
           <textarea
             className="input-field"
-            placeholder="Escribe tu consulta o pide una simulación..."
+            placeholder={initialLoading ? "Conectando..." : "Escribe tu consulta o pide una simulación..."}
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => {
@@ -171,19 +242,29 @@ function App() {
                 handleSend();
               }
             }}
-            disabled={isProcessing}
+            disabled={isProcessing || initialLoading}
           />
           <div className="input-actions">
             <div className="action-toggles">
               <label className="toggle-label">
-                <input type="checkbox" checked={useRag} onChange={(e) => setUseRag(e.target.checked)} />
+                <input type="checkbox" checked={useRag} onChange={(e) => setUseRag(e.target.checked)} disabled={initialLoading} />
                 <Database size={16} /> RAG
               </label>
             </div>
+            
+            <button
+              className={`mic-btn ${isRecording ? 'recording' : ''}`}
+              onClick={isRecording ? stopRecording : startRecording}
+              disabled={isProcessing || initialLoading}
+              title={isRecording ? "Detener grabación" : "Dictar por voz"}
+            >
+              {isRecording ? <Square size={18} /> : <Mic size={18} />}
+            </button>
+
             <button
               className="send-btn"
               onClick={handleSend}
-              disabled={!input.trim() || isProcessing}
+              disabled={!input.trim() || isProcessing || initialLoading}
             >
               <Send size={18} />
             </button>
