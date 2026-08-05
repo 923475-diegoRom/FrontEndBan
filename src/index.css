@@ -98,3 +98,37 @@ body {
   display: inline-block;
   animation: pulse 2s infinite;
 }
+
+/* Mobile layout improvements */
+.sticky-header {
+  position: sticky;
+  top: 0;
+  background: var(--bg-main);
+  z-index: 30;
+  padding: 8px 0;
+}
+
+.scrollable-main {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0 16px;
+}
+
+.quick-actions-row {
+  display: flex;
+  overflow-x: auto;
+  overflow-y: hidden;
+  gap: 8px;
+  padding-bottom: 4px;
+  -webkit-overflow-scrolling: touch;
+}
+
+.sticky-welcome {
+  position: sticky;
+  top: 0;
+  background: var(--bg-main);
+  z-index: 10;
+  padding-bottom: 8px;
+  margin-bottom: 8px;
+}
+

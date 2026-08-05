@@ -14,7 +14,17 @@ function App() {
     content: 'Hola. Soy tu Copiloto Financiero. ¿En qué te puedo ayudar hoy?',
     quickActions: ['Consultar saldo', 'Transferir dinero', 'Simular crédito', 'Buscar información']
   };
-  const [isProcessing, setIsProcessing] = useState(false);
+  // Mobile detection state
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth <= 768);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  // Short welcome for mobile
+  const shortWelcome = { role: 'system', content: 'Hola', quickActions: welcomeMessage.quickActions };
+
   const [useRag, setUseRag] = useState(true);
   const [serverStatus, setServerStatus] = useState(null);
   const [initialLoading, setInitialLoading] = useState(true);
@@ -245,9 +255,7 @@ function App() {
           </div>
         ) : (
           <>
-            <div className="sticky-welcome">
-              <Message msg={welcomeMessage} onQuickActionClick={sendMessage} />
-            </div>
+                          {isMobile ? <Message msg={shortWelcome} onQuickActionClick={sendMessage} /> : <Message msg={welcomeMessage} onQuickActionClick={sendMessage} />}
             {messages.map((msg, idx) => (
               <Message key={idx} msg={msg} onQuickActionClick={sendMessage} />
             ))}

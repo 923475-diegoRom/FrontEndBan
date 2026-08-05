@@ -147,8 +147,8 @@ export const Layout = ({ children, sidebarOpen, setSidebarOpen, useRag, setUseRa
       </aside>
 
       {/* Main Content */}
-      <main className="main-content">
-        <header className="header">
+      <main className="main-content scrollable-main">
+        <header className="header sticky-header">
           <div className="header-left">
             <button className="icon-btn mobile-menu-btn" onClick={() => setSidebarOpen(!sidebarOpen)}>
               <Menu size={20} />

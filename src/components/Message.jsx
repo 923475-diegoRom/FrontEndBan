@@ -43,7 +43,7 @@ export const Message = ({ msg, onQuickActionClick }) => {
         </div>
 
         {msg.quickActions && msg.quickActions.length > 0 && (
-          <div style={{ display: 'flex', gap: '8px', marginTop: '12px', flexWrap: 'wrap' }}>
+          <div className="quick-actions-row" style={{ marginTop: '12px' }}>
             {msg.quickActions.map((action, i) => (
               <button 
                 key={i} 
