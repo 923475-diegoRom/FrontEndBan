@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Database, Send, Loader2, Mic, Square } from 'lucide-react';
+import { Send, Loader2, Mic, Square } from 'lucide-react';
 import { Layout } from './components/Layout';
 import { Message } from './components/Message';
 import { AuthModal } from './components/AuthModal';
@@ -45,7 +45,6 @@ function App() {
   const [serverStatus, setServerStatus] = useState(null);
   const [initialLoading, setInitialLoading] = useState(true);
   const [isRecording, setIsRecording] = useState(false);
-  const chatEndRef = useRef(null);
   const latestMessageRef = useRef(null);
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
@@ -379,7 +378,6 @@ function App() {
                 </div>
               );
             })}
-            <div ref={chatEndRef} />
           </>
         )}
       </div>
