@@ -11,10 +11,15 @@ import {
   UploadCloud,
   FileText,
   Lock,
-  X
+  X,
+  User,
+  LogOut,
+  CreditCard,
+  Users,
+  ShieldCheck
 } from 'lucide-react';
 
-export const Layout = ({ children, sidebarOpen, setSidebarOpen, useRag, setUseRag, serverStatus }) => {
+export const Layout = ({ children, sidebarOpen, setSidebarOpen, useRag, setUseRag, serverStatus, user, onOpenAuthModal, onLogout, onNewChat }) => {
   const [isUploading, setIsUploading] = useState(false);
   const [uploadMessage, setUploadMessage] = useState('');
   const [isDarkMode, setIsDarkMode] = useState(false);
@@ -56,15 +61,20 @@ export const Layout = ({ children, sidebarOpen, setSidebarOpen, useRag, setUseRa
     const formData = new FormData();
     formData.append('file', file);
 
+    const getApiBaseUrl = () => {
+      return import.meta.env.VITE_API_URL || 'https://fluffy-zebra-9667j6gxr5j37xjg-8000.app.github.dev';
+    };
+
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/api/v1/documents/upload`, {
+      const response = await fetch(`${getApiBaseUrl()}/api/v1/documents/upload`, {
         method: 'POST',
         body: formData,
       });
 
       const data = await response.json();
       if (response.ok && data.status === 'success') {
-        setUploadMessage(`✅ Éxito: ${data.chunks_indexed} fragmentos indexados`);
+        const chunkInfo = data.chunks_indexed !== undefined ? `${data.chunks_indexed} fragmentos indexados` : 'Documento indexado con éxito';
+        setUploadMessage(`✅ Éxito: ${chunkInfo}`);
       } else {
         setUploadMessage(`❌ Error: ${data.message || 'Fallo en la subida'}`);
       }
@@ -80,6 +90,10 @@ export const Layout = ({ children, sidebarOpen, setSidebarOpen, useRag, setUseRa
     }
   };
 
+  const formattedBalance = user?.balance !== undefined 
+    ? user.balance.toLocaleString('es-MX', { style: 'currency', currency: 'MXN' })
+    : null;
+
   return (
     <div className="app-container">
       {/* Sidebar Overlay for Mobile */}
@@ -93,7 +107,14 @@ export const Layout = ({ children, sidebarOpen, setSidebarOpen, useRag, setUseRa
       {/* Sidebar */}
       <aside className={`sidebar ${sidebarOpen ? 'open' : ''}`}>
         <div className="sidebar-header" style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-          <button className="new-chat-btn" style={{ flex: 1 }}>
+          <button 
+            className="new-chat-btn" 
+            style={{ flex: 1 }}
+            onClick={() => {
+              if (onNewChat) onNewChat();
+              setSidebarOpen(false);
+            }}
+          >
             <MessageSquare size={18} />
             + Nueva
           </button>
@@ -101,7 +122,45 @@ export const Layout = ({ children, sidebarOpen, setSidebarOpen, useRag, setUseRa
             <X size={20} />
           </button>
         </div>
+
         <div className="sidebar-content">
+          {/* User Account Info Section (Supabase Data) */}
+          {user ? (
+            <div style={{ marginBottom: '24px', padding: '12px', backgroundColor: 'var(--bg-secondary)', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
+              <h3 style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '6px', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <ShieldCheck size={14} color="var(--accent-brand)" /> Usuario Autenticado
+              </h3>
+              <div style={{ fontWeight: '700', fontSize: '0.95rem', color: 'var(--text-primary)', marginBottom: '4px' }}>
+                {user.name}
+              </div>
+              <div style={{ fontSize: '0.75rem', color: '#10b981', fontWeight: '500' }}>
+                • Sesión activa
+              </div>
+            </div>
+          ) : (
+            <div style={{ marginBottom: '24px', padding: '12px', backgroundColor: 'var(--bg-secondary)', borderRadius: '8px', border: '1px dashed var(--border-color)' }}>
+              <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '8px' }}>
+                Inicia sesión con tu cuenta para identificarte.
+              </div>
+              <button 
+                onClick={onOpenAuthModal}
+                style={{
+                  width: '100%',
+                  padding: '8px 12px',
+                  borderRadius: '6px',
+                  backgroundColor: 'var(--accent-brand)',
+                  color: '#fff',
+                  border: 'none',
+                  fontSize: '0.8rem',
+                  fontWeight: '600',
+                  cursor: 'pointer'
+                }}
+              >
+                Iniciar Sesión
+              </button>
+            </div>
+          )}
+
           <div style={{ marginBottom: '24px' }}>
             <h3 style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '12px', textTransform: 'uppercase' }}>Cargar Conocimiento</h3>
             
@@ -127,8 +186,8 @@ export const Layout = ({ children, sidebarOpen, setSidebarOpen, useRag, setUseRa
               </div>
             )}
           </div>
-
         </div>
+
         <div className="sidebar-footer">
           <h3 style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
             <Activity size={16} /> Observabilidad en Vivo
@@ -158,12 +217,51 @@ export const Layout = ({ children, sidebarOpen, setSidebarOpen, useRag, setUseRa
           </div>
           
           <div className="header-right">
-            <select className="context-selector">
-              <option>Banca Personal</option>
-              <option>Banca Empresarial</option>
-              <option>Análisis Normativo</option>
-            </select>
-            
+            {user ? (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  padding: '6px 14px',
+                  borderRadius: '20px',
+                  backgroundColor: 'var(--bg-secondary)',
+                  border: '1px solid var(--border-color)',
+                  fontSize: '0.85rem'
+                }}>
+                  <User size={16} color="var(--accent-brand)" />
+                  <span style={{ fontWeight: '600', color: 'var(--text-primary)' }}>{user.name}</span>
+                </div>
+                <button 
+                  className="icon-btn" 
+                  title="Cerrar Sesión" 
+                  onClick={onLogout}
+                  style={{ color: '#ef4444' }}
+                >
+                  <LogOut size={18} />
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={onOpenAuthModal}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  padding: '6px 14px',
+                  borderRadius: '18px',
+                  backgroundColor: 'var(--accent-brand)',
+                  color: '#fff',
+                  border: 'none',
+                  fontSize: '0.85rem',
+                  fontWeight: '600',
+                  cursor: 'pointer'
+                }}
+              >
+                <User size={15} /> Iniciar Sesión
+              </button>
+            )}
+
             <div className="secure-connection">
               <Lock size={14} />
               <span className="secure-text">Conexión segura</span>
@@ -184,3 +282,4 @@ export const Layout = ({ children, sidebarOpen, setSidebarOpen, useRag, setUseRa
     </div>
   );
 };
+

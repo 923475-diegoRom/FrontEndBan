@@ -2,29 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Database, Send, Loader2, Mic, Square } from 'lucide-react';
 import { Layout } from './components/Layout';
 import { Message } from './components/Message';
+import { AuthModal } from './components/AuthModal';
 import './App.css';
-// ------------------------------------------------------------
-// Frontend Streaming Logic Overview
-// ------------------------------------------------------------
-// This React component implements the client side of the chatbot's
-// Server‑Sent Events (SSE) streaming protocol. The backend (`/api/v1/chat/stream`)
-// returns a stream of newline‑delimited JSON events. Each event has a `type`
-// field (`token`, `sources`, `metrics`, `tool_start`, `tool_end`).
-//
-// The component reads the raw `ReadableStream` from `fetch`, decodes the bytes
-// with a `TextDecoder`, and buffers partial chunks until it encounters the
-// double‑newline separator (`"\n\n"`). It then parses each `data:` line as JSON
-// and updates the UI state accordingly:
-//   • `token`   → appends to the current assistant message content.
-//   • `sources` → stores citation metadata for the last assistant message.
-//   • `metrics` → attaches latency/throughput information.
-//   • `tool_start` / `tool_end` → records tool invocation details in the
-//     "thought" field, enabling the UI to display tool usage steps.
-//
-// By using React state updates (`setMessages`) inside the streaming loop, the
-// UI renders each token as soon as it arrives, giving a real‑time typing effect.
-// The final message is marked with `streaming: false` once the stream ends.
-// ------------------------------------------------------------
 
 function App() {
   // Persist a session identifier for the chat history
@@ -35,6 +14,12 @@ function App() {
     localStorage.setItem('sessionId', generated);
     return generated;
   });
+
+  // Supabase Auth and User Profile state
+  const [token, setToken] = useState(() => localStorage.getItem('auth_token') || null);
+  const [user, setUser] = useState(null);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [input, setInput] = useState('');
   const [messages, setMessages] = useState([]);
@@ -45,6 +30,7 @@ function App() {
     content: 'Hola. Soy tu Copiloto Financiero. ¿En qué te puedo ayudar hoy?',
     quickActions: ['Consultar saldo', 'Transferir dinero', 'Simular crédito', 'Buscar información']
   };
+
   // Mobile detection state
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
   useEffect(() => {
@@ -53,10 +39,8 @@ function App() {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // Short welcome for mobile
   const shortWelcome = { role: 'system', content: 'Hola, ¿en qué puedo ayudarte?', quickActions: welcomeMessage.quickActions };
 
-  // duplicate isProcessing removed
   const [useRag, setUseRag] = useState(true);
   const [serverStatus, setServerStatus] = useState(null);
   const [initialLoading, setInitialLoading] = useState(true);
@@ -65,10 +49,45 @@ function App() {
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
 
+  const getApiBaseUrl = () => {
+    return import.meta.env.VITE_API_URL || 'https://fluffy-zebra-9667j6gxr5j37xjg-8000.app.github.dev';
+  };
+
+  // Fetch current user profile from Supabase (/api/v1/me) if token exists
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      if (!token) {
+        setUser(null);
+        return;
+      }
+      try {
+        const res = await fetch(`${getApiBaseUrl()}/api/v1/me`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        if (res.ok) {
+          const userData = await res.json();
+          setUser(userData);
+        } else {
+          // Token invalid or expired
+          console.warn("Token de Supabase inválido o expirado");
+          localStorage.removeItem('auth_token');
+          setToken(null);
+          setUser(null);
+        }
+      } catch (err) {
+        console.error("Error al obtener perfil de usuario:", err);
+      }
+    };
+
+    fetchUserProfile();
+  }, [token]);
+
   useEffect(() => {
     const fetchStatus = async () => {
       try {
-        const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/api/v1/status`);
+        const res = await fetch(`${getApiBaseUrl()}/api/v1/status`);
         if (res.ok) {
           const data = await res.json();
           setServerStatus(data);
@@ -79,9 +98,20 @@ function App() {
       }
     };
     fetchStatus();
-    const interval = setInterval(fetchStatus, 5000);
+    const interval = setInterval(fetchStatus, 4000);
     return () => clearInterval(interval);
   }, []);
+
+  const handleAuthSuccess = (newToken, newUser) => {
+    setToken(newToken);
+    setUser(newUser);
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('auth_token');
+    setToken(null);
+    setUser(null);
+  };
 
   const scrollToBottom = () => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -107,7 +137,7 @@ function App() {
         
         setIsProcessing(true);
         try {
-          const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/api/v1/audio/transcribe`, {
+          const res = await fetch(`${getApiBaseUrl()}/api/v1/audio/transcribe`, {
             method: 'POST',
             body: formData
           });
@@ -140,18 +170,12 @@ function App() {
     }
   };
 
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
-
   const sendMessage = async (userText) => {
-    // Add user's message to the chat
     const userMsg = { role: 'user', content: userText };
     setMessages(prev => [...prev, userMsg]);
     setInput('');
     setIsProcessing(true);
 
-    // Placeholder for assistant's streaming response
     setMessages(prev => [
       ...prev,
       {
@@ -163,9 +187,14 @@ function App() {
     ]);
 
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/api/v1/chat/stream`, {
+      const headers = { 'Content-Type': 'application/json' };
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+
+      const response = await fetch(`${getApiBaseUrl()}/api/v1/chat/stream`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify({ message: userText, use_rag: useRag, session_id: sessionId })
       });
 
@@ -200,19 +229,28 @@ function App() {
                   const data = JSON.parse(dataStr);
                   if (data.type === 'token') {
                     textContent += data.content;
+                    const cleanContent = textContent
+                      .replace(/<herramienta[\s\S]*?(<\/herramienta>|<\/hfunction>|>)/gi, '')
+                      .replace(/<function[\s\S]*?(<\/function>|>)/gi, '')
+                      .replace(/<\/hfunction>/gi, '')
+                      .replace(/<\/herramienta>/gi, '');
                     setMessages(prev => {
                       const updated = [...prev];
-                      updated[updated.length - 1].content = textContent;
+                      updated[updated.length - 1].content = cleanContent;
                       return updated;
                     });
                   } else if (data.type === 'sources') {
                     setMessages(prev => {
                       const updated = [...prev];
                       const sources = Array.isArray(data.content) ? data.content : [];
-                      updated[updated.length - 1].citations = sources.map((s, i) => ({
-                        source: s.metadata && s.metadata.source ? s.metadata.source : `Fuente ${i + 1}`,
-                        pageContent: s.pageContent || ''
+                      const newCitations = sources.map((s, i) => ({
+                        source: typeof s === 'string' ? s : (s.metadata?.source || s.source || `Fuente ${i + 1}`),
+                        pageContent: typeof s === 'string' ? '' : (s.pageContent || s.text || '')
                       }));
+                      updated[updated.length - 1].citations = [
+                        ...(updated[updated.length - 1].citations || []),
+                        ...newCitations
+                      ];
                       return updated;
                     });
                   } else if (data.type === 'metrics') {
@@ -227,7 +265,7 @@ function App() {
                       const msg = updated[updated.length - 1];
                       if (!msg.thought) {
                         msg.thought = { summary: `Herramienta: ${data.name}`, details: `Entrada: ${JSON.stringify(data.input, null, 2)}` };
-                      } else {
+                      } else if (!msg.thought.summary.includes(data.name)) {
                         msg.thought.summary += `, ${data.name}`;
                         msg.thought.details += `\n\nHerramienta: ${data.name}\nEntrada: ${JSON.stringify(data.input, null, 2)}`;
                       }
@@ -239,6 +277,30 @@ function App() {
                       const msg = updated[updated.length - 1];
                       if (msg.thought) {
                         msg.thought.details += `\nResultado: ${data.output}`;
+                      }
+                      try {
+                        let rawStr = typeof data.output === 'string' ? data.output : JSON.stringify(data.output || '');
+                        if (rawStr.includes('fuentes_usadas')) {
+                          const jsonMatch = rawStr.match(/\{[\s\S]*"fuentes_usadas"[\s\S]*\}/);
+                          const jsonToParse = jsonMatch ? jsonMatch[0] : rawStr;
+                          const parsedOutput = JSON.parse(jsonToParse);
+                          if (Array.isArray(parsedOutput.fuentes_usadas) && parsedOutput.fuentes_usadas.length > 0) {
+                            const extractedCitations = parsedOutput.fuentes_usadas.map((src) => ({
+                              source: src,
+                              pageContent: parsedOutput.info || ''
+                            }));
+                            const existing = msg.citations || [];
+                            const combined = [...existing];
+                            extractedCitations.forEach(c => {
+                              if (!combined.some(item => item.source === c.source)) {
+                                combined.push(c);
+                              }
+                            });
+                            msg.citations = combined;
+                          }
+                        }
+                      } catch (err) {
+                        console.warn("Error parsing citations:", err);
                       }
                       return updated;
                     });
@@ -278,7 +340,17 @@ function App() {
   };
 
   return (
-    <Layout sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} useRag={useRag} setUseRag={setUseRag} serverStatus={serverStatus}>
+    <Layout 
+      sidebarOpen={sidebarOpen} 
+      setSidebarOpen={setSidebarOpen} 
+      useRag={useRag} 
+      setUseRag={setUseRag} 
+      serverStatus={serverStatus}
+      user={user}
+      onOpenAuthModal={() => setIsAuthModalOpen(true)}
+      onLogout={handleLogout}
+      onNewChat={() => setMessages([])}
+    >
       <div className="chat-area">
         {initialLoading ? (
           <div className="loader-container">
@@ -287,7 +359,9 @@ function App() {
           </div>
         ) : (
           <>
-                          {isMobile ? <Message msg={shortWelcome} onQuickActionClick={sendMessage} /> : <Message msg={welcomeMessage} onQuickActionClick={sendMessage} />}
+            {messages.length === 0 && (
+              isMobile ? <Message msg={shortWelcome} onQuickActionClick={sendMessage} /> : <Message msg={welcomeMessage} onQuickActionClick={sendMessage} />
+            )}
             {messages.map((msg, idx) => (
               <Message key={idx} msg={msg} onQuickActionClick={sendMessage} />
             ))}
@@ -312,8 +386,6 @@ function App() {
             disabled={isProcessing || initialLoading}
           />
           <div className="input-actions">
-
-            
             <button
               className={`mic-btn ${isRecording ? 'recording' : ''}`}
               onClick={isRecording ? stopRecording : startRecording}
@@ -333,8 +405,15 @@ function App() {
           </div>
         </div>
       </div>
+
+      <AuthModal 
+        isOpen={isAuthModalOpen} 
+        onClose={() => setIsAuthModalOpen(false)} 
+        onAuthSuccess={handleAuthSuccess} 
+      />
     </Layout>
   );
 }
 
 export default App;
+
