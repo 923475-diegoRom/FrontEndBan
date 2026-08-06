@@ -90,6 +90,28 @@ function App() {
     fetchUserProfile();
   }, [token]);
 
+  // Manejar el enlace de confirmación de correo enviada por Supabase Auth (#access_token=...)
+  useEffect(() => {
+    const handleEmailConfirmation = () => {
+      const hash = window.location.hash;
+      if (hash && hash.includes('access_token=')) {
+        const params = new URLSearchParams(hash.replace('#', '?'));
+        const accessToken = params.get('access_token');
+        const type = params.get('type');
+
+        if (accessToken) {
+          localStorage.setItem('auth_token', accessToken);
+          setToken(accessToken);
+          // Limpiar el hash de la URL para una apariencia limpia
+          window.history.replaceState(null, '', window.location.pathname);
+          alert('🎉 ¡Correo verificado exitosamente! Tu cuenta y saldo bancario han sido activados en Banorte.');
+        }
+      }
+    };
+
+    handleEmailConfirmation();
+  }, []);
+
   useEffect(() => {
     const fetchStatus = async () => {
       try {
