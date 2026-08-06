@@ -197,7 +197,7 @@ export const Layout = ({ children, sidebarOpen, setSidebarOpen, serverStatus, us
       </aside>
 
       {/* Main Content */}
-      <main className="main-content scrollable-main">
+      <main className="main-content">
         <header className="header sticky-header">
           <div className="header-left">
             <button className="icon-btn mobile-menu-btn" onClick={() => setSidebarOpen(!sidebarOpen)}>
