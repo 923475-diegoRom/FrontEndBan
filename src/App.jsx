@@ -46,11 +46,18 @@ function App() {
   const [initialLoading, setInitialLoading] = useState(true);
   const [isRecording, setIsRecording] = useState(false);
   const chatEndRef = useRef(null);
+  const latestMessageRef = useRef(null);
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
 
   const getApiBaseUrl = () => {
     return import.meta.env.VITE_API_URL || 'https://fluffy-zebra-9667j6gxr5j37xjg-8000.app.github.dev';
+  };
+
+  const scrollToNewMessage = () => {
+    setTimeout(() => {
+      latestMessageRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 80);
   };
 
   // Fetch current user profile from Supabase (/api/v1/me) if token exists
@@ -185,6 +192,8 @@ function App() {
         citations: [],
       }
     ]);
+
+    scrollToNewMessage();
 
     try {
       const headers = { 'Content-Type': 'application/json' };
@@ -362,9 +371,14 @@ function App() {
             {messages.length === 0 && (
               isMobile ? <Message msg={shortWelcome} onQuickActionClick={sendMessage} /> : <Message msg={welcomeMessage} onQuickActionClick={sendMessage} />
             )}
-            {messages.map((msg, idx) => (
-              <Message key={idx} msg={msg} onQuickActionClick={sendMessage} />
-            ))}
+            {messages.map((msg, idx) => {
+              const isTargetForScroll = idx === Math.max(0, messages.length - 2);
+              return (
+                <div key={idx} ref={isTargetForScroll ? latestMessageRef : null}>
+                  <Message msg={msg} onQuickActionClick={sendMessage} />
+                </div>
+              );
+            })}
             <div ref={chatEndRef} />
           </>
         )}
