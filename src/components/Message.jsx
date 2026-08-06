@@ -39,6 +39,33 @@ export const Message = ({ msg, onQuickActionClick }) => {
             </div>
           )}
           
+          {msg.content && msg.content.includes('[REQUIERE_CONFIRMACION:') && (
+            <div style={{ marginTop: '14px', padding: '12px', background: 'rgba(235, 0, 41, 0.05)', border: '1px solid var(--accent-brand)', borderRadius: '8px' }}>
+              <p style={{ margin: '0 0 10px 0', fontSize: '0.9rem', fontWeight: 'bold', color: 'var(--accent-brand)' }}>
+                ⚠️ Confirmación requerida para transferir dinero
+              </p>
+              <button 
+                className="confirm-transfer-btn"
+                style={{
+                  backgroundColor: 'var(--accent-brand)',
+                  color: '#fff',
+                  border: 'none',
+                  padding: '10px 18px',
+                  borderRadius: '6px',
+                  fontWeight: 'bold',
+                  cursor: 'pointer',
+                  fontSize: '0.9rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px'
+                }}
+                onClick={() => onQuickActionClick && onQuickActionClick('Sí, confirmo la transferencia')}
+              >
+                ✅ Confirmar Transacción
+              </button>
+            </div>
+          )}
+          
           {msg.interactiveData && <InteractiveCard data={msg.interactiveData} />}
         </div>
 
