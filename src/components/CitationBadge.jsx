@@ -28,7 +28,7 @@ export const CitationBadge = ({ citation }) => {
         onClick={() => hasContent && setIsOpen(!isOpen)}
         title={hasContent ? "Ver fragmento original" : source}
         style={{
-          border: '1px solid #d1d5db',
+          border: '1px solid var(--border-color)',
           cursor: hasContent ? 'pointer' : 'default',
           display: 'inline-flex',
           alignItems: 'center',
@@ -36,15 +36,15 @@ export const CitationBadge = ({ citation }) => {
           fontFamily: 'inherit',
           padding: '4px 10px',
           borderRadius: '16px',
-          backgroundColor: '#ffffff',
-          color: '#374151',
+          backgroundColor: 'var(--bg-surface)',
+          color: 'var(--text-primary)',
           fontSize: '0.82rem',
           fontWeight: '500',
-          boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
+          boxShadow: '0 1px 2px rgba(0,0,0,0.1)',
           transition: 'all 0.15s ease'
         }}
       >
-        <FileText size={14} style={{ color: '#eb0029' }} /> 
+        <FileText size={14} style={{ color: 'var(--accent-brand)' }} /> 
         <span>{source}</span>
         {hasContent && (
           <span style={{ marginLeft: '2px', display: 'flex', alignItems: 'center' }}>
@@ -59,11 +59,11 @@ export const CitationBadge = ({ citation }) => {
             position: 'absolute',
             bottom: 'calc(100% + 8px)',
             left: 0,
-            backgroundColor: '#ffffff',
-            color: '#111827',
-            border: '1px solid #d1d5db',
+            backgroundColor: 'var(--bg-surface)',
+            color: 'var(--text-primary)',
+            border: '1px solid var(--border-color)',
             borderRadius: '10px',
-            boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.2), 0 8px 10px -6px rgba(0, 0, 0, 0.1)',
+            boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.4), 0 8px 10px -6px rgba(0, 0, 0, 0.2)',
             padding: '14px',
             width: '340px',
             maxWidth: '85vw',
@@ -82,9 +82,9 @@ export const CitationBadge = ({ citation }) => {
             justifyContent: 'space-between',
             marginBottom: '10px',
             paddingBottom: '8px',
-            borderBottom: '1px solid #f3f4f6'
+            borderBottom: '1px solid var(--border-color)'
           }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#eb0029', fontWeight: '700', fontSize: '0.88rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--accent-brand)', fontWeight: '700', fontSize: '0.88rem' }}>
               <FileText size={16} />
               <span>Fragmento extraído:</span>
             </div>
@@ -92,11 +92,11 @@ export const CitationBadge = ({ citation }) => {
               onClick={() => setIsOpen(false)}
               style={{
                 border: 'none',
-                background: '#f3f4f6',
+                background: 'var(--bg-surface-light)',
                 cursor: 'pointer',
                 padding: '4px',
                 borderRadius: '50%',
-                color: '#6b7280',
+                color: 'var(--text-secondary)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center'
@@ -108,12 +108,12 @@ export const CitationBadge = ({ citation }) => {
           </div>
 
           {/* Source Subtitle */}
-          <div style={{ fontWeight: '600', color: '#4b5563', marginBottom: '8px', fontSize: '0.8rem' }}>
+          <div style={{ fontWeight: '600', color: 'var(--text-secondary)', marginBottom: '8px', fontSize: '0.8rem' }}>
             Fuente: {source}
           </div>
 
           {/* Body Text */}
-          <div style={{ color: '#1f2937', fontSize: '0.85rem' }}>
+          <div style={{ color: 'var(--text-primary)', fontSize: '0.85rem' }}>
             {pageContent}
           </div>
         </div>

@@ -88,13 +88,13 @@ export const AuthModal = ({ isOpen, onClose, onAuthSuccess }) => {
       backdropFilter: 'blur(4px)'
     }}>
       <div style={{
-        backgroundColor: 'var(--bg-primary, #ffffff)',
+        backgroundColor: 'var(--bg-surface)',
         borderRadius: '16px',
         width: '90%',
         maxWidth: '420px',
         padding: '28px',
-        boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
-        border: '1px solid var(--border-color, #e5e7eb)',
+        boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.2)',
+        border: '1px solid var(--border-color)',
         position: 'relative'
       }}>
         <button
@@ -106,7 +106,7 @@ export const AuthModal = ({ isOpen, onClose, onAuthSuccess }) => {
             border: 'none',
             background: 'transparent',
             cursor: 'pointer',
-            color: 'var(--text-secondary, #6b7280)'
+            color: 'var(--text-secondary)'
           }}
         >
           <X size={20} />
@@ -117,8 +117,8 @@ export const AuthModal = ({ isOpen, onClose, onAuthSuccess }) => {
             display: 'inline-flex',
             padding: '12px',
             borderRadius: '50%',
-            backgroundColor: 'rgba(235, 0, 41, 0.1)',
-            color: 'var(--accent-brand, #EB0029)',
+            backgroundColor: 'rgba(235, 0, 41, 0.15)',
+            color: 'var(--accent-brand)',
             marginBottom: '12px'
           }}>
             <ShieldCheck size={32} />
@@ -136,7 +136,7 @@ export const AuthModal = ({ isOpen, onClose, onAuthSuccess }) => {
         {/* Tab Switcher */}
         <div style={{
           display: 'flex',
-          backgroundColor: '#f3f4f6',
+          backgroundColor: 'var(--bg-surface-light)',
           borderRadius: '8px',
           padding: '4px',
           marginBottom: '20px'
@@ -152,9 +152,9 @@ export const AuthModal = ({ isOpen, onClose, onAuthSuccess }) => {
               fontSize: '0.875rem',
               fontWeight: '600',
               cursor: 'pointer',
-              backgroundColor: isLogin ? '#ffffff' : 'transparent',
+              backgroundColor: isLogin ? 'var(--bg-surface)' : 'transparent',
               color: isLogin ? 'var(--text-primary)' : 'var(--text-secondary)',
-              boxShadow: isLogin ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+              boxShadow: isLogin ? '0 1px 3px rgba(0,0,0,0.2)' : 'none',
               transition: 'all 0.2s ease'
             }}
           >
@@ -171,9 +171,9 @@ export const AuthModal = ({ isOpen, onClose, onAuthSuccess }) => {
               fontSize: '0.875rem',
               fontWeight: '600',
               cursor: 'pointer',
-              backgroundColor: !isLogin ? '#ffffff' : 'transparent',
+              backgroundColor: !isLogin ? 'var(--bg-surface)' : 'transparent',
               color: !isLogin ? 'var(--text-primary)' : 'var(--text-secondary)',
-              boxShadow: !isLogin ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+              boxShadow: !isLogin ? '0 1px 3px rgba(0,0,0,0.2)' : 'none',
               transition: 'all 0.2s ease'
             }}
           >
@@ -197,7 +197,9 @@ export const AuthModal = ({ isOpen, onClose, onAuthSuccess }) => {
                   width: '100%',
                   padding: '10px 14px',
                   borderRadius: '8px',
-                  border: '1px solid var(--border-color, #d1d5db)',
+                  border: '1px solid var(--border-color)',
+                  backgroundColor: 'var(--bg-main)',
+                  color: 'var(--text-primary)',
                   fontSize: '0.95rem',
                   boxSizing: 'border-box',
                   outline: 'none'
@@ -220,7 +222,9 @@ export const AuthModal = ({ isOpen, onClose, onAuthSuccess }) => {
                 width: '100%',
                 padding: '10px 14px',
                 borderRadius: '8px',
-                border: '1px solid var(--border-color, #d1d5db)',
+                border: '1px solid var(--border-color)',
+                backgroundColor: 'var(--bg-main)',
+                color: 'var(--text-primary)',
                 fontSize: '0.95rem',
                 boxSizing: 'border-box',
                 outline: 'none'
@@ -242,7 +246,9 @@ export const AuthModal = ({ isOpen, onClose, onAuthSuccess }) => {
                 width: '100%',
                 padding: '10px 14px',
                 borderRadius: '8px',
-                border: '1px solid var(--border-color, #d1d5db)',
+                border: '1px solid var(--border-color)',
+                backgroundColor: 'var(--bg-main)',
+                color: 'var(--text-primary)',
                 fontSize: '0.95rem',
                 boxSizing: 'border-box',
                 outline: 'none'
@@ -254,7 +260,7 @@ export const AuthModal = ({ isOpen, onClose, onAuthSuccess }) => {
             <div style={{
               fontSize: '0.8rem',
               color: '#ef4444',
-              backgroundColor: '#fef2f2',
+              backgroundColor: 'rgba(239, 68, 68, 0.15)',
               padding: '8px 12px',
               borderRadius: '6px',
               marginBottom: '16px',
@@ -267,12 +273,12 @@ export const AuthModal = ({ isOpen, onClose, onAuthSuccess }) => {
           {successMsg && (
             <div style={{
               fontSize: '0.8rem',
-              color: '#15803d',
-              backgroundColor: '#f0fdf4',
+              color: '#10b981',
+              backgroundColor: 'rgba(16, 185, 129, 0.15)',
               padding: '8px 12px',
               borderRadius: '6px',
               marginBottom: '16px',
-              borderLeft: '3px solid #15803d'
+              borderLeft: '3px solid #10b981'
             }}>
               {successMsg}
             </div>
@@ -285,7 +291,7 @@ export const AuthModal = ({ isOpen, onClose, onAuthSuccess }) => {
               width: '100%',
               padding: '12px',
               borderRadius: '8px',
-              backgroundColor: 'var(--accent-brand, #EB0029)',
+              backgroundColor: 'var(--accent-brand)',
               color: '#ffffff',
               border: 'none',
               fontWeight: '600',
