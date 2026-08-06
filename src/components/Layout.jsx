@@ -20,6 +20,71 @@ export const Layout = ({ children, sidebarOpen, setSidebarOpen, serverStatus, us
   const [isDarkMode, setIsDarkMode] = useState(false);
   const fileInputRef = useRef(null);
 
+  React.useEffect(() => {
+    const savedTheme = localStorage.getItem('theme');
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    if (savedTheme === 'dark' || (!savedTheme && prefersDark)) {
+      setIsDarkMode(true);
+      document.documentElement.classList.add('dark');
+    }
+  }, []);
+
+  const toggleTheme = () => {
+    if (isDarkMode) {
+      document.documentElement.classList.remove('dark');
+      localStorage.setItem('theme', 'light');
+    } else {
+      document.documentElement.classList.add('dark');
+      localStorage.setItem('theme', 'dark');
+    }
+    setIsDarkMode(!isDarkMode);
+  };
+
+  const handleFileUpload = async (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    if (file.type !== 'application/pdf' && !file.name.endsWith('.pdf')) {
+      setUploadMessage('Error: Solo se permiten archivos PDF');
+      setTimeout(() => setUploadMessage(''), 5000);
+      return;
+    }
+
+    setIsUploading(true);
+    setUploadMessage('Subiendo y procesando...');
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const getApiBaseUrl = () => {
+      return import.meta.env.VITE_API_URL || 'https://fluffy-zebra-9667j6gxr5j37xjg-8000.app.github.dev';
+    };
+
+    try {
+      const response = await fetch(`${getApiBaseUrl()}/api/v1/documents/upload`, {
+        method: 'POST',
+        body: formData,
+      });
+
+      const data = await response.json();
+      if (response.ok && data.status === 'success') {
+        const chunkInfo = data.chunks_indexed !== undefined ? `${data.chunks_indexed} fragmentos indexados` : 'Documento indexado con éxito';
+        setUploadMessage(`✅ Éxito: ${chunkInfo}`);
+      } else {
+        setUploadMessage(`❌ Error: ${data.message || 'Fallo en la subida'}`);
+      }
+    } catch (error) {
+      console.error('Error uploading file:', error);
+      setUploadMessage('❌ Error de conexión');
+    } finally {
+      setIsUploading(false);
+      setTimeout(() => setUploadMessage(''), 8000);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
+
   return (
     <div className="app-container">
       {/* Sidebar Overlay for Mobile */}
