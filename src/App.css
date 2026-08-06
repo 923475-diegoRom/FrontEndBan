@@ -653,7 +653,8 @@
     padding: 12px;
   }
   .brand-name {
-    display: none;
+    display: inline-block;
+    font-size: 0.95rem;
   }
   .context-selector {
     display: none;
